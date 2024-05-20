@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 
@@ -8,10 +9,11 @@ namespace GameLauncher
     class Program
     {
         static Dictionary<string, string> games = new Dictionary<string, string>();
-        static string saveFilePath = "games.txt";
+        static string connectionString = "Data Source=games.db;Version=3;";
 
         static void Main(string[] args)
         {
+            InitializeDatabase();
             LoadGames();
             while (true)
             {
@@ -58,6 +60,24 @@ namespace GameLauncher
 
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey();
+            }
+        }
+
+        static void InitializeDatabase()
+        {
+            if (!File.Exists("games.db"))
+            {
+                SQLiteConnection.CreateFile("games.db");
+            }
+
+            using (var connection = new SQLiteConnection(connectionString))
+            {
+                connection.Open();
+                string createTableQuery = "CREATE TABLE IF NOT EXISTS games (Name TEXT PRIMARY KEY, Path TEXT)";
+                using (var command = new SQLiteCommand(createTableQuery, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
             }
         }
 
@@ -196,11 +216,29 @@ namespace GameLauncher
 
         static void SaveGames()
         {
-            using (StreamWriter writer = new StreamWriter(saveFilePath))
+            using (var connection = new SQLiteConnection(connectionString))
             {
-                foreach (var game in games)
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
                 {
-                    writer.WriteLine($"{game.Key}|{game.Value}");
+                    // Clear existing data
+                    using (var clearCommand = new SQLiteCommand("DELETE FROM games", connection, transaction))
+                    {
+                        clearCommand.ExecuteNonQuery();
+                    }
+
+                    // Insert current games
+                    foreach (var game in games)
+                    {
+                        using (var insertCommand = new SQLiteCommand("INSERT INTO games (Name, Path) VALUES (@Name, @Path)", connection, transaction))
+                        {
+                            insertCommand.Parameters.AddWithValue("@Name", game.Key);
+                            insertCommand.Parameters.AddWithValue("@Path", game.Value);
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
+
+                    transaction.Commit();
                 }
             }
             Console.WriteLine("Games saved successfully.");
@@ -208,22 +246,24 @@ namespace GameLauncher
 
         static void LoadGames()
         {
-            if (File.Exists(saveFilePath))
+            using (var connection = new SQLiteConnection(connectionString))
             {
-                using (StreamReader reader = new StreamReader(saveFilePath))
+                connection.Open();
+                string selectQuery = "SELECT Name, Path FROM games";
+                using (var command = new SQLiteCommand(selectQuery, connection))
                 {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
+                    using (var reader = command.ExecuteReader())
                     {
-                        var parts = line.Split('|');
-                        if (parts.Length == 2)
+                        while (reader.Read())
                         {
-                            games[parts[0]] = parts[1];
+                            string name = reader["Name"].ToString();
+                            string path = reader["Path"].ToString();
+                            games[name] = path;
                         }
                     }
                 }
-                Console.WriteLine("Games loaded successfully.");
             }
+            Console.WriteLine("Games loaded successfully.");
         }
     }
 }
