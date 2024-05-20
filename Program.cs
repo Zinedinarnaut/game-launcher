@@ -18,16 +18,15 @@ namespace GameLauncher
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine("Game Launcher Console");
-                Console.WriteLine("1. List Games");
-                Console.WriteLine("2. Add Game");
-                Console.WriteLine("3. Remove Game");
-                Console.WriteLine("4. Launch Game");
-                Console.WriteLine("5. Search Game");
-                Console.WriteLine("6. Update Game Path");
-                Console.WriteLine("7. Save & Exit");
-                Console.Write("Select an option: ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("====================================");
+                Console.WriteLine("        Game Launcher Console       ");
+                Console.WriteLine("====================================");
+                Console.ResetColor();
+                Console.WriteLine();
+                PrintMenu();
 
+                Console.Write("Select an option: ");
                 string choice = Console.ReadLine();
 
                 switch (choice)
@@ -54,13 +53,40 @@ namespace GameLauncher
                         SaveGames();
                         return;
                     default:
-                        Console.WriteLine("Invalid option, please try again.");
+                        PrintError("Invalid option, please try again.");
                         break;
                 }
 
                 Console.WriteLine("Press any key to continue...");
                 Console.ReadKey();
             }
+        }
+
+        static void PrintMenu()
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("1. List Games");
+            Console.WriteLine("2. Add Game");
+            Console.WriteLine("3. Remove Game");
+            Console.WriteLine("4. Launch Game");
+            Console.WriteLine("5. Search Game");
+            Console.WriteLine("6. Update Game Path");
+            Console.WriteLine("7. Save & Exit");
+            Console.ResetColor();
+        }
+
+        static void PrintError(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        static void PrintSuccess(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(message);
+            Console.ResetColor();
         }
 
         static void InitializeDatabase()
@@ -84,11 +110,13 @@ namespace GameLauncher
         static void ListGames()
         {
             Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("List of Games:");
+            Console.ResetColor();
 
             if (games.Count == 0)
             {
-                Console.WriteLine("No games added.");
+                PrintError("No games added.");
             }
             else
             {
@@ -113,16 +141,16 @@ namespace GameLauncher
                 if (!games.ContainsKey(name))
                 {
                     games.Add(name, path);
-                    Console.WriteLine("Game added successfully.");
+                    PrintSuccess("Game added successfully.");
                 }
                 else
                 {
-                    Console.WriteLine("A game with that name already exists.");
+                    PrintError("A game with that name already exists.");
                 }
             }
             else
             {
-                Console.WriteLine("The path to the game executable is invalid.");
+                PrintError("The path to the game executable is invalid.");
             }
         }
 
@@ -135,11 +163,11 @@ namespace GameLauncher
             if (games.ContainsKey(name))
             {
                 games.Remove(name);
-                Console.WriteLine("Game removed successfully.");
+                PrintSuccess("Game removed successfully.");
             }
             else
             {
-                Console.WriteLine("Game not found.");
+                PrintError("Game not found.");
             }
         }
 
@@ -158,16 +186,16 @@ namespace GameLauncher
                         FileName = games[name],
                         UseShellExecute = true
                     });
-                    Console.WriteLine("Game launched successfully.");
+                    PrintSuccess("Game launched successfully.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to launch game: {ex.Message}");
+                    PrintError($"Failed to launch game: {ex.Message}");
                 }
             }
             else
             {
-                Console.WriteLine("Game not found.");
+                PrintError("Game not found.");
             }
         }
 
@@ -179,11 +207,13 @@ namespace GameLauncher
 
             if (games.ContainsKey(name))
             {
+                Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine($"{name} - {games[name]}");
+                Console.ResetColor();
             }
             else
             {
-                Console.WriteLine("Game not found.");
+                PrintError("Game not found.");
             }
         }
 
@@ -201,16 +231,16 @@ namespace GameLauncher
                 if (File.Exists(newPath))
                 {
                     games[name] = newPath;
-                    Console.WriteLine("Game path updated successfully.");
+                    PrintSuccess("Game path updated successfully.");
                 }
                 else
                 {
-                    Console.WriteLine("The new path to the game executable is invalid.");
+                    PrintError("The new path to the game executable is invalid.");
                 }
             }
             else
             {
-                Console.WriteLine("Game not found.");
+                PrintError("Game not found.");
             }
         }
 
@@ -241,7 +271,7 @@ namespace GameLauncher
                     transaction.Commit();
                 }
             }
-            Console.WriteLine("Games saved successfully.");
+            PrintSuccess("Games saved successfully.");
         }
 
         static void LoadGames()
@@ -263,7 +293,7 @@ namespace GameLauncher
                     }
                 }
             }
-            Console.WriteLine("Games loaded successfully.");
+            PrintSuccess("Games loaded successfully.");
         }
     }
 }
